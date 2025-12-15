@@ -1,15 +1,25 @@
 pipeline {
-  agent { label 'linux' }
-  options {
-    buildDiscarder(logRotator(numToKeepStr: '5'))
-  }
-  stages {
-    stage('Scan') {
-      steps {
-        withSonarQubeEnv(installationName: 'sq1') { 
-          sh './mvnw clean org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.0.2155:sonar'
-        }
-      }
+    agent any
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '5'))
     }
-  }
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'master', url: 'https://github.com/ojaouadi02-design/java-web-app-sonar.git'
+            }
+        }
+        stage('Compile') {
+            steps {
+                sh 'mvn clean install'
+            }
+        }
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sq1') {  // Replace 'sq1' with your SonarQube installation name in Jenkins
+                    sh 'mvn clean verify sonar:sonar -Dsonar.projectKey=java-web-app-sonar -Dsonar.login=$SONAR_AUTH_TOKEN'
+                }
+            }
+        }
+    }
 }
